@@ -69,7 +69,7 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
-    if username == "admin" and password == "admin":
+    if username == "admin" and password == "chichbong123":
         token = jwt.encode({"user": username}, SECRET_KEY, algorithm="HS256").decode(
             "utf-8"
         )
