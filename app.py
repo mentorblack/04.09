@@ -69,10 +69,8 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
-    if username == "admin" and password == "chichbong123":
-        token = jwt.encode({"user": username}, SECRET_KEY, algorithm="HS256").decode(
-            "utf-8"
-        )
+    if username == "admin" and password == "admin":
+        token = jwt.encode({"user": username}, SECRET_KEY, algorithm="HS256")
         return jsonify({"success": True, "token": token})
     return jsonify({"success": False, "message": "Invalid credentials"}), 401
 
